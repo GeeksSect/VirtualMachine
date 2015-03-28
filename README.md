@@ -3,4 +3,4 @@
 
 ## Дакументацыя і праектаванне
 
-(Ідэі)[]
+[Ідэі](https://github.com/GeeksSect/VirtualMachine/blob/master/Ideas.md)
