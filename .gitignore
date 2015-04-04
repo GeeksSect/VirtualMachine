@@ -1,8 +1,11 @@
-
+*.userprefs
 *.exe
 *.obj
 *.[oa]
+*.selections.*
 bin/
 obj/
+build/
+.dub/
 [Dd]ebug
 [Rr]elease
