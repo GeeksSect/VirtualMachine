@@ -1,6 +1,7 @@
 *.userprefs
 *.exe
 *.obj
+*.lst
 *.[oa]
 *.selections.*
 bin/
