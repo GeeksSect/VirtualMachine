@@ -57,11 +57,12 @@ private:
 	 * 
 	 *     HLT 0x1F terminate execution
 	 */
+	// гляньце таксама маю апошнюю ідэю наконт каманд
 	enum Command
 	{
 		NOP     = 0x00,
 		MOV     = 0x01,
-		ADD     = 0x10,
+		ADD     = 0x02,// адрукоўка была
 		SUB     = 0x03,
 		MUL     = 0x04,
 		UMUL    = 0x05,
@@ -91,7 +92,7 @@ private:
 		SYSCALL = 0x1B,
 		CLI     = 0x1C,
 		SLI     = 0x1D,
-		HLT     = 0x1E,
+		HLT     = 0x1F,
 	}
 
 	// memory
