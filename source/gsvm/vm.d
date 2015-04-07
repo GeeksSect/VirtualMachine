@@ -6,32 +6,53 @@ import std.conv;
 
 unittest
 {
-	ulong mem_size = 0x100000;
-	
+	uint mem_size = 0x100000;
+
 	auto machine = new VM();
-	ulong[] programm = [0x0000_0000_0000_00FF,
-	                    0x0000_0000_0000_0000,
-	                    0x1000_0000_0000_0000,
-	                    0x1F00_0000_0000_0000];
+	uint[] programm = [0x0000_00FF,  // NOP
+	                   0x0010_0000,  // SUM 0x00000000 0x00001111
+	                   0x0000_0000,  // ADDR
+	                   0x0000_1111,  // ADDR
+		               0x0008_0000,  // INC 0x00000000
+		               0x0000_0000,  // ADDR
+		               0x0008_0000,  // INC 0x00000000
+		               0x0000_0000,  // ADDR
+		               0x0008_0000,  // INC 0x00000000
+		               0x0000_0000,  // ADDR 
+		               0x0009_0000,  // DEC 0x00000000
+		               0x0000_0000,  // ADDR 
+		               0x0009_0000,  // DEC 0x00000000
+		               0x0000_0000,  // ADDR 
+	                   0x001E_0000]; // HLT
 	
-	ulong[] some_value = [0x0000_0000_0000_FF00];
+	uint[] some_value = [0x0000_FF00];
 
 	Storage ram = new Storage(mem_size);
 	ram.write(0, programm);
-	ram.write(mem_size - 1, some_value);
+	ram.write(0x0000_1111, some_value);
 
 	machine.connectStorage(ram);
-	machine.startExecution(1);
+	machine.startExecution();
 
-	assert(0xFFFF == ram.read(machine.getRegA));
+	/* TODO each command of unittest should send output in separate memory location. 
+	 * 
+	 * !!! 0x0 = reg_A (07.04.2015) 
+	 * It is needed to implement register manager 
+	 */
+	auto sum_check = ram.read(machine.getRegA);
+	auto inc_dec_check = ram.read(0x0);
+
+	assert(0x10000 == sum_check);
+	assert(0x10000 == inc_dec_check);
 }
 
 class VM
 {
 private:
-	static const ulong default_mem_size = 0x100000;
+	static const uint default_mem_size = 0x100000;
 
 	/* Commands:
+	 * 
 	 *     NOP 0x00 empty iteration of VM
 	 * 
 	 *     HLT 0x1F terminate execution
@@ -56,8 +77,8 @@ private:
 		SHR     = 0x0F,
 		SAR     = 0x10,
 		SAL     = 0x11,
-		// SCL = 0xXX,
-		// SCR = 0xXX,
+		// SCL  = 0xXX,
+		// SCR  = 0xXX,
 		JMP     = 0x12,
 		CMP     = 0x13,
 		JE      = 0x14,
@@ -74,32 +95,32 @@ private:
 	}
 
 	// memory
-	ulong mem_size = this.default_mem_size;
+	uint mem_size = this.default_mem_size;
 	Storage memory = null;
 	// instruction register
-	ulong reg_I = 0;
+	uint reg_I = 0;
 	// address register
-	ulong reg_A = 0;
+	uint reg_A = 0;
 
 public:
-	this(ulong mem_size = this.default_mem_size)
+	this(uint mem_size = this.default_mem_size)
 	{
 		this.mem_size = mem_size;
 		this.memory = new Storage(mem_size);
 
 		// Registers initialization
 		reg_I = 0;
-		reg_A = mem_size - 1; // temporary stub
+		reg_A = 0; 
 
 		assert(this.memory !is null);
 	}
 
-	ulong getRegI()
+	uint getRegI()
 	{
 		return reg_I;
 	}
 
-	ulong getRegA()
+	uint getRegA()
 	{
 		return reg_A;
 	}
@@ -112,38 +133,131 @@ public:
 		this.memory = mem;
 	}
 
-	void startExecution(ulong start_addr = 0)
+	void startExecution(uint start_addr = 0)
 	{
 		assert(start_addr <= mem_size);
 		reg_I = start_addr;
 
 		while (reg_I != mem_size)
 		{
-			ulong cur_word = memory.read(reg_I);
-			auto cur_cmd = cur_word >> 56;
+			auto cur_word = memory.read(reg_I);
+			auto cur_cmd = cur_word >> 16;
+
+			/* TODO
+			 * Commands should place result in registers, not in operands.
+			 */
 			switch (cur_cmd)
 			{
 				case Command.NOP:
 					++reg_I;
 					break;
+				case Command.MOV:
+					++reg_I;
+					auto addr_1 = memory.read(reg_I);
+					++reg_I;
+					auto addr_2 = memory.read(reg_I);
+
+					auto val_1 = memory.read(addr_1);
+					auto val_2 = memory.read(addr_2);
+
+					memory.write(addr_1, val_2);
+					memory.write(addr_2, val_1);
+
+					++reg_I;
+					break;
 				case Command.ADD:
-					auto addr = cur_word & (to!ulong(1) << 41);
-					auto temp = memory.read(reg_A);
-					temp += memory.read(addr);
-					memory.write(reg_A, temp);
+					++reg_I;
+					auto addr_1 = memory.read(reg_I);
+					++reg_I;
+					auto addr_2 = memory.read(reg_I);
+
+					auto temp = to!int(memory.read(addr_1));
+					temp += to!int(memory.read(addr_2));
+					memory.write(addr_1, to!uint(temp));
+					++reg_I;
+					break;
+				case Command.SUB:
+					++reg_I;
+					auto addr_1 = memory.read(reg_I);
+					++reg_I;
+					auto addr_2 = memory.read(reg_I);
+					
+					auto temp = to!int(memory.read(addr_1));
+					temp -= to!int(memory.read(addr_2));
+					memory.write(addr_1, to!uint(temp));
+					++reg_I;
+					break;
+				case Command.INC:
+					++reg_I;
+					auto addr = memory.read(reg_I); //TODO
+
+					auto temp = memory.read(addr);
+					++temp;
+					memory.write(addr, temp);
+					++reg_I;
+					break;
+				case Command.DEC:
+					++reg_I;
+					auto addr = memory.read(reg_I); //TODO
+
+					auto temp = memory.read(addr);
+					--temp;
+					memory.write(addr, temp);
+					++reg_I;
+					break;
+				case Command.AND:
+					++reg_I;
+					auto addr_1 = memory.read(reg_I);
+					++reg_I;
+					auto addr_2 = memory.read(reg_I);
+					
+					auto temp = memory.read(addr_1);
+					temp &= memory.read(addr_2);
+					memory.write(addr_1, temp);
+					++reg_I;
+					break;
+				case Command.OR:
+					++reg_I;
+					auto addr_1 = memory.read(reg_I);
+					++reg_I;
+					auto addr_2 = memory.read(reg_I);
+					
+					auto temp = memory.read(addr_1);
+					temp |= memory.read(addr_2);
+					memory.write(addr_1, temp);
+					++reg_I;
+					break;
+				case Command.XOR:
+					++reg_I;
+					auto addr_1 = memory.read(reg_I);
+					++reg_I;
+					auto addr_2 = memory.read(reg_I);
+					
+					auto temp = memory.read(addr_1);
+				    temp ^= memory.read(addr_2);
+					memory.write(addr_1, temp);
+					++reg_I;
+					break;
+				case Command.NOT:
+					++reg_I;
+					auto addr = memory.read(reg_I);
+					
+					auto temp = ~(memory.read(addr));
+					memory.write(addr, temp);
 					++reg_I;
 					break;
 				case Command.HLT:
 					return;
 				default:
+					throw new Exception("Unknown opcode");
 			}
 		}
 	}
 
-	void loadToMemory(ulong start_pos, ulong[] data)
+	void loadToMemory(uint start_pos, uint[] data)
 	{
 		assert(this.mem_size >= start_pos + data.length);
-		for (ulong i = start_pos; i < start_pos + data.length; ++i)
+		for (uint i = start_pos; i < start_pos + data.length; ++i)
 		{
 			memory.write(i, data[i - start_pos]);
 		}
