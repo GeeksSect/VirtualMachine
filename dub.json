@@ -1,0 +1,15 @@
+{
+	"name": "gsvm",
+	"description": "Virtual Machine",
+	"authors": ["HaraldZealot", "krucios", "z4p", "AlexeyKatomachin", "ArtemMeleshko"],
+	"homepage": "https://github.com/GeeksSect/VirtualMachine",
+	"copyright": "Copyright (c) 2015 Aliaksei Stankevich, Andrei Pazniak, Pavel Radkevich, Alexey Katomachin, Artem Meleshko",
+	"configurations":[
+		{
+			"name": "standalone",
+			"targetType": "executable",
+			"targetPath": "build/standalone",
+			"workingDirectory": "build/standalone"
+		}
+	]
+}
