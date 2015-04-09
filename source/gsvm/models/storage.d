@@ -45,6 +45,7 @@ public:
 
 	void write(uint addr, uint val)
 	{
+		assert(addr < storage.length, "Incorrect address: " ~ to!string(addr));
 		this.storage[addr] = val;
 	}
 
