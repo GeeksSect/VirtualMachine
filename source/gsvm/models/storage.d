@@ -202,6 +202,8 @@ unittest
 			}));
 }
 
+enum TypeOfStorage : ubyte {GPR = 0x1u, Programm, RAM}
+
 /** 
  * struct for emulating cash and memory
  * 
@@ -209,6 +211,9 @@ unittest
  */
 struct Storage
 {
+public: 
+	TypeOfStorage typeOfStorage;
+
 private:
 	ubyte[] storage; // null is init for arrays
 
@@ -230,9 +235,18 @@ private:
 	}
 
 public:
-	this(uint mem_size)
+	this(uint memorySize, TypeOfStorage typeOfStorage)
+	in
 	{
-		this.storage = new ubyte[mem_size];
+		assert(memorySize % uint.sizeof == 0, "memory isn't aliquote size of the machine word");
+		assert(typeOfStorage == TypeOfStorage.Programm
+			&& (memorySize >>> 1) % uint.sizeof == 0, 
+			"for programm memory half of it have to be aliquote size of the machine word");
+	}
+	body
+	{
+		storage = new ubyte[memorySize];
+		this.typeOfStorage = typeOfStorage;
 	}
 
 	uint length() @property pure @safe
@@ -244,8 +258,8 @@ public:
 		if(is(T == ubyte) || is(T == ushort) || is(T == uint))
 	in
 	{
-		assert(addr <= storage.length - T.sizeof, "imposible write address");
-		assert(addr % T.sizeof == 0, "imposible alligment");
+		assert(addr <= storage.length - T.sizeof, "impossible write address");
+		assert(addr % T.sizeof == 0, "impossible alligment");
 	}
 	body
 	{
@@ -256,22 +270,24 @@ public:
 		}
 	}
 
-	// не ўпэўнены што існуе апаратны адпаведнік
-	/+void write(uint start_addr, uint[] data)
+	void write(uint startAddr, immutable(ubyte)[] data)
+	in
 	{
-		assert(start_addr + data.length <= storage.length);
-		for (uint i = start_addr; i < start_addr + data.length; ++i)
-		{
-			storage[i] = data[i - start_addr];
-		}
-	}+/
+		assert(typeOfStorage != TypeOfStorage.RAM, "this type of memory doesn't support range write");
+		assert(startAddr + data.length < storage.length, "impossible range for write");
+	}
+	body
+	{
+		foreach(addr, sendedByte; data)
+			storage[startAddr + addr] = sendedByte;
+	}
 
 	T read(T)(uint addr) pure nothrow @nogc @safe
 		if(is(T == ubyte) || is(T == ushort) || is(T == uint))
 	in
 	{
-		assert(addr <= storage.length - T.sizeof, "imposible read address");
-		assert(addr % T.sizeof == 0, "imposible alligment");
+		assert(addr <= storage.length - T.sizeof, "impossible read address");
+		assert(addr % T.sizeof == 0, "impossible alligment");
 	}
 	body
 	{
@@ -284,16 +300,42 @@ public:
 		return result;
 	}
 
-	//тое самае
-	/+uint[] read(uint start_addr, uint count)
+
+	immutable(ubyte)[] read(uint startAddr, uint count)
+	in
 	{
-		assert(start_addr + count < storage.length);
-		uint[] data;
-		for (uint i = start_addr; i < start_addr + count; ++i)
-		{
-			data ~= storage[i];
-		}
-		return data;
-	}+/
+		assert(typeOfStorage == TypeOfStorage.RAMStorage, "this type of memory doesn't support range read");
+		assert(startAddr + count < storage.length, "impossible range for read");
+		assert(startAddr % uint.sizeof == 0, "start address  is misalligned");
+		assert(count % uint.sizeof == 0, "start address  is misalligned");
+	}
+	body
+	{
+		return storage[startAddr..startAddr+count].idup;
+	}
+
+	void shiftHalfLeft()
+	in
+	{
+		assert(typeOfStorage == TypeOfStorage.Programm, "this type of memory doesn't half memory shift");
+	}
+	body
+	{
+		auto half = storage.length >>> 1;
+		foreach(addr; 0..half)
+			storage[addr] = storage[addr + half];
+	}
+
+	void shiftHalfRight()
+	in
+	{
+		assert(typeOfStorage == TypeOfStorage.Programm, "this type of memory doesn't half memory shift");
+	}
+	body
+	{
+		auto half = storage.length >>> 1;
+		foreach(addr; 0..half)
+			storage[addr + half] = storage[addr];
+	}
 }
 
