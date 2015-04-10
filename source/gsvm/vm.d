@@ -4,6 +4,7 @@ import gsvm.models.storage;
 
 import std.conv;
 
+/+
 unittest
 {
 	uint mem_size = 0x100000;
@@ -27,24 +28,26 @@ unittest
 	
 	uint[] some_value = [0x0000_FF00];
 
-	Storage ram = new Storage(mem_size);
+	/+Storage ram = Storage(mem_size);
 	ram.write(0, programm);
 	ram.write(0x0000_1111, some_value);
 
 	machine.connectStorage(ram);
 	machine.startExecution();
 
-	/* TODO each command of unittest should send output in separate memory location. 
+	/+ TODO each command of unittest should send output in separate memory location. 
 	 * 
 	 * !!! 0x0 = reg_A (07.04.2015) 
 	 * It is needed to implement register manager 
-	 */
+	 +/
 	auto sum_check = ram.read(machine.getRegA);
 	auto inc_dec_check = ram.read(0x0);
 
 	assert(0x10000 == sum_check);
-	assert(0x10000 == inc_dec_check);
+	assert(0x10000 == inc_dec_check);+/
 }
+
+
 
 class VM
 {
@@ -97,7 +100,7 @@ private:
 
 	// memory
 	uint mem_size = this.default_mem_size;
-	Storage memory = null;
+//	Storage memory = null;
 	// instruction register
 	uint reg_I = 0;
 	// address register
@@ -107,13 +110,13 @@ public:
 	this(uint mem_size = this.default_mem_size)
 	{
 		this.mem_size = mem_size;
-		this.memory = new Storage(mem_size);
+		this.memory = Storage(mem_size);
 
 		// Registers initialization
 		reg_I = 0;
 		reg_A = 0; 
 
-		assert(this.memory !is null);
+		//assert(this.memory !is null);
 	}
 
 	uint getRegI()
@@ -126,13 +129,13 @@ public:
 		return reg_A;
 	}
 
-	void connectStorage(Storage mem)
+	/+void connectStorage(Storage mem)
 	{
 		assert(mem !is null);
 
 		this.mem_size = mem.length;
 		this.memory = mem;
-	}
+	}+/
 
 	void startExecution(uint start_addr = 0)
 	{
@@ -265,3 +268,4 @@ public:
 	}
 }
 
++/
