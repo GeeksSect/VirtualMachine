@@ -57,20 +57,20 @@ public:
 	body
 	{
 		this.memory = memory;
-		handlerVector = new Handlervector[0x03];
-		handlerVector[OperationCode.NOP] = nopHandler;
-		handlerVector[0x01] = invalidHandler;
-		handlerVector[0x02] = notHandler;
+		handlerVector = new HandlerType[0x03];
+		handlerVector[OperationCode.NOP] = &this.nopHandler;
+		handlerVector[0x01] = &this.invalidHandler;
+		handlerVector[0x02] = &this.notHandler;
 	}
 
 
 	void runOneCommand()
 	{
 		uint[5] commandWithOperand;
-		commandWithOperand[0] = localProgrammRegister.read!uint(localInstruction);
+		commandWithOperand[0] = localProgrammRegister.read!uint(cast(uint)localInstruction);
 		//TODO calculate real count of operand
 		foreach(shift; 1..5)
-			commandWithOperand = generalPourposeRegisters.read!uint(localInstruction + shift);
+			commandWithOperand[shift] = generalPourposeRegisters.read!uint(cast(uint)localInstruction + shift);
 		handlerVector[cast(ubyte)(commandWithOperand[0] & 0xFF)](4, commandWithOperand[1], commandWithOperand[2], 
 			commandWithOperand[3], commandWithOperand[4]);
 	}
@@ -122,34 +122,34 @@ public:
 	}
 
 private:
-	HandlerType nopHandler = delegate void(ubyte byteCount, 
+	void nopHandler(ubyte byteCount, 
 		ref uint firstParametr,
 		ref uint secondParametr,
 		ref uint thirdParametr,
 		ref uint fourthParametr)
 	{
-	};
+	}
 
-	HandlerType invalidHandler = delegate void(ubyte byteCount, 
+	void invalidHandler(ubyte byteCount, 
 		ref uint firstParametr,
 		ref uint secondParametr,
 		ref uint thirdParametr,
 		ref uint fourthParametr)
 	{
-		throw Exception("imposible opcode");
-	};
+		throw new Exception("impossible opcode");
+	}
 
-	HandlerType notHandler =  delegate void(ubyte byteCount, 
+	void notHandler(ubyte byteCount, 
 		ref uint firstParametr,
 		ref uint secondParametr,
 		ref uint thirdParametr,
 		ref uint fourthParametr)
 	{
-		first = firstParmaeter;
+		first = firstParametr;
 		second = ~first;
-		secondParameter = second;
+		secondParametr = cast(uint)second;
 		subLoadProgramm();
-	};
+	}
 }
 
 
