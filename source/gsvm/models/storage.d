@@ -336,28 +336,32 @@ public:
 	}
 	body
 	{
+		void insertPoint(long point, ref long[] points)
+		{
+			if(points[$-2] < point && point < points[$-1])
+			{
+				++(points.length);
+				points[$-1] = points[$-2];
+				points[$-2] = point;
+			}
+		}
+
+		bool belongSegmentToOther(long firstStart, long firstEnd, long otherStart, long otherEnd)
+		{
+			return otherStart <= firstStart && firstEnd <= otherEnd;
+		}
+
 		ubyte[] result;
 		long endAddr = startAddr + count;
 		long[] points = [startAddr, endAddr];
 
-		if(startAddr < 0 && endAddr > 0)
-		{
-			++(points.length);
-			points[$-1] = points[$-2];
-			points[$-2] = 0;
-		}
-
-		if(startAddr < cast(long)storage.length && cast(long)storage.length < endAddr)
-		{
-			++(points.length);
-			points[$-1] = points[$-2];
-			points[$-2] = storage.length;
-		}
+		insertPoint(0, points);
+		insertPoint(cast(long)storage.length, points);
 
 		foreach(i;0..points.length-1)
 		{
 			ubyte[] segment;
-			if(points[i] >= 0 && points[i + 1] <= storage.length)
+			if(belongSegmentToOther(points[i], points[i + 1], 0, storage.length))
 				segment = storage[points[i]..points[i + 1]];
 			else
 				segment = new ubyte[points[i + 1] - points[i]];
