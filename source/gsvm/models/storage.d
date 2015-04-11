@@ -273,7 +273,7 @@ public:
 	in
 	{
 		assert(typeOfStorage != TypeOfStorage.RAM, "this type of memory doesn't support range write");
-		assert(startAddr + data.length < storage.length, "impossible range for write");
+		assert(startAddr + data.length <= storage.length, "impossible range for write");
 	}
 	body
 	{

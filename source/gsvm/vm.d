@@ -32,10 +32,10 @@ private:
 
 	// registers in which make calculation
 	ulong first, second, third, fourth;
+	ubyte flags;
 
 	long localInstruction = half;
 	uint globalInstruction;
-
 
 	Storage* memory;
 
@@ -57,22 +57,30 @@ public:
 	body
 	{
 		this.memory = memory;
-		handlerVector = new HandlerType[0x03];
+		handlerVector = new HandlerType[OperationCode.max + 1];
 		handlerVector[OperationCode.NOP] = &this.nopHandler;
-		handlerVector[0x01] = &this.invalidHandler;
-		handlerVector[0x02] = &this.notHandler;
+		handlerVector[OperationCode.NOT] = &this.notHandler;
+		foreach(ref handler; handlerVector)
+			if(handler is null)
+				handler = &this.invalidHandler;
 	}
 
 
 	void runOneCommand()
 	{
+		import std.stdio: writeln;
 		uint[5] commandWithOperand;
 		commandWithOperand[0] = localProgrammRegister.read!uint(cast(uint)localInstruction);
 		//TODO calculate real count of operand
+		writeln("command and operand");
+		writeln("before:\n", commandWithOperand);
 		foreach(shift; 1..5)
-			commandWithOperand[shift] = generalPourposeRegisters.read!uint(cast(uint)localInstruction + shift);
+			commandWithOperand[shift] = generalPourposeRegisters.read!uint(cast(uint)localInstruction + shift*4);
 		handlerVector[cast(ubyte)(commandWithOperand[0] & 0xFF)](4, commandWithOperand[1], commandWithOperand[2], 
 			commandWithOperand[3], commandWithOperand[4]);
+		writeln("after:\n", commandWithOperand);
+		localInstruction+=4;
+		globalInstruction+=4;
 	}
 
 	void loadProgramm(uint loadPosition)
