@@ -5,7 +5,7 @@ import std.conv;
 unittest
 {
 	// Functional test
-	auto mem = new Storage(0x100);
+	auto mem = new Storage(0x100, TypeOfStorage.GPR);
 	assert(mem.storage !is null);
 
 	assert(mem.length == 0x100); 
@@ -52,102 +52,102 @@ unittest
 	
 	try
 	{
-		auto mem = Storage(0x10);
+		auto mem = Storage(0x10, TypeOfStorage.GPR);
 		mem.write(0x10, cast(ubyte)0x1u);
 	}
 	catch(AssertError ae)
 	{
-		assert(ae.msg == "imposible write address");
+		assert(ae.msg == "impossible write address", ae.msg);
 	}
 
 	try
 	{
-		auto mem = Storage(0x10);
+		auto mem = Storage(0x10, TypeOfStorage.GPR);
 		mem.write(0xF, cast(ushort)0x1u);
 	}
 	catch(AssertError ae)
 	{
-		assert(ae.msg == "imposible write address");
+		assert(ae.msg == "impossible write address");
 	}
 
 	try
 	{
-		auto mem = Storage(0x10);
+		auto mem = Storage(0x10, TypeOfStorage.GPR);
 		mem.write(0xD, cast(uint)0x1u);
 	}
 	catch(AssertError ae)
 	{
-		assert(ae.msg == "imposible write address");
+		assert(ae.msg == "impossible write address");
 	}
 
 	try
 	{
-		auto mem = Storage(0x10);
+		auto mem = Storage(0x10, TypeOfStorage.GPR);
 		mem.write(0x2, cast(uint)0x1u);
 	}
 	catch(AssertError ae)
 	{
-		assert(ae.msg == "imposible alligment");
+		assert(ae.msg == "impossible alligment");
 	}
 
 	try
 	{
-		auto mem = Storage(0x10);
+		auto mem = Storage(0x10, TypeOfStorage.GPR);
 		mem.write(0x1, cast(ushort)0x1u);
 	}
 	catch(AssertError ae)
 	{
-		assert(ae.msg == "imposible alligment");
+		assert(ae.msg == "impossible alligment");
 	}
 
 	try
 	{
-		auto mem = Storage(0x10);
+		auto mem = Storage(0x10, TypeOfStorage.GPR);
 		mem.read!ubyte(0x10);
 	}
 	catch(AssertError ae)
 	{
-		assert(ae.msg == "imposible read address");
+		assert(ae.msg == "impossible read address");
 	}
 
 	try
 	{
-		auto mem = Storage(0x10);
+		auto mem = Storage(0x10, TypeOfStorage.GPR);
 		mem.read!ushort(0xF);
 	}
 	catch(AssertError ae)
 	{
-		assert(ae.msg == "imposible read address");
+		assert(ae.msg == "impossible read address");
 	}
 
 	try
 	{
-		auto mem = Storage(0x10);
+		auto mem = Storage(0x10, TypeOfStorage.GPR);
 		mem.read!uint(0xD);
 	}
 	catch(AssertError ae)
 	{
-		assert(ae.msg == "imposible read address");
+		assert(ae.msg == "impossible read address");
 	}
 
 	try
 	{
-		auto mem = Storage(0x10);
+		auto mem = Storage(0x10, TypeOfStorage.GPR);
 		mem.read!uint(0x2);
 	}
 	catch(AssertError ae)
 	{
-		assert(ae.msg == "imposible alligment");
+		assert(ae.msg == "impossible alligment");
 	}
 
 	try
 	{
-		auto mem = Storage(0x10);
+		auto mem = Storage(0x10, TypeOfStorage.GPR);
 		mem.read!ushort(0x1);
 	}
 	catch(AssertError ae)
 	{
-		assert(ae.msg == "imposible alligment");
+		assert(ae.msg == "impossible alligment");
 	}
 }
 
@@ -157,7 +157,7 @@ unittest
 	import std.traits;
 	static assert(__traits(compiles,
 			{
-				auto mem = Storage(0x10);
+				auto mem = Storage(0x10, TypeOfStorage.GPR);
 				mem.read!ubyte(0x00);
 				mem.read!ushort(0x00);
 				mem.read!uint(0x00);
@@ -167,37 +167,37 @@ unittest
 			}));
 	static assert(!__traits(compiles,
 			{
-				auto mem = Storage(0x10);
+				auto mem = Storage(0x10, TypeOfStorage.GPR);
 				mem.read!byte(0x00);
 			}));
 	static assert(!__traits(compiles,
 			{
-				auto mem = Storage(0x10);
+				auto mem = Storage(0x10, TypeOfStorage.GPR);
 				mem.read!byte(0x00);
 			}));
 	static assert(!__traits(compiles,
 			{
-				auto mem = Storage(0x10);
+				auto mem = Storage(0x10, TypeOfStorage.GPR);
 				mem.read!int(0x00);
 			}));
 	static assert(!__traits(compiles,
 			{
-				auto mem = Storage(0x10);
+				auto mem = Storage(0x10, TypeOfStorage.GPR);
 				mem.read!ulong(0x00);
 			}));
 	static assert(!__traits(compiles,
 			{
-				auto mem = Storage(0x10);
+				auto mem = Storage(0x10, TypeOfStorage.GPR);
 				mem.write(0x00, cast(byte)0xFF);
 			}));
 	static assert(!__traits(compiles,
 			{
-				auto mem = Storage(0x10);
+				auto mem = Storage(0x10, TypeOfStorage.GPR);
 				mem.write(0x00, cast(int)0xFF);
 			}));
 	static assert(!__traits(compiles,
 			{
-				auto mem = Storage(0x10);
+				auto mem = Storage(0x10, TypeOfStorage.GPR);
 				mem.write(0x00, cast(ulong)0xFF);
 			}));
 }
@@ -239,9 +239,8 @@ public:
 	in
 	{
 		assert(memorySize % uint.sizeof == 0, "memory isn't aliquote size of the machine word");
-		assert(typeOfStorage == TypeOfStorage.Programm
-			&& (memorySize >>> 1) % uint.sizeof == 0, 
-			"for programm memory half of it have to be aliquote size of the machine word");
+		typeOfStorage == TypeOfStorage.Programm && assert((memorySize >>> 1) % uint.sizeof == 0, 
+														  "for programm memory half of it have to be aliquote size of the machine word");
 	}
 	body
 	{
@@ -301,17 +300,71 @@ public:
 	}
 
 
-	immutable(ubyte)[] read(uint startAddr, uint count)
+	unittest
+	{
+		auto mem = Storage(0x10, TypeOfStorage.RAM);
+		mem.write(0x00, 0xFEFE_FEFE);
+		mem.write(0x04, 0xFEFE_FEFE);
+		mem.write(0x08, 0xFEFE_FEFE);
+		mem.write(0x0C, 0xFEFE_FEFE);
+
+		assert([0xFE, 0xFE, 0xFE, 0xFE] == mem.read(0x00, 4));
+		assert([0xFE, 0xFE, 0xFE, 0xFE] == mem.read(0x04, 4));
+		assert([0xFE, 0xFE, 0xFE, 0xFE] == mem.read(0x0C, 4));
+		assert([0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE] == mem.read(0x00, 8));
+		assert([0x00, 0x00, 0x00, 0x00, 0xFE, 0xFE, 0xFE, 0xFE] == mem.read(-0x04, 8));
+		assert([0xFE, 0xFE, 0xFE, 0xFE, 0x00, 0x00, 0x00, 0x00] == mem.read(0x0C, 8));
+		assert([0x00, 0x00, 0x00, 0x00, 0xFE, 0xFE, 0xFE, 0xFE,
+				0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE,
+				0xFE, 0xFE, 0xFE, 0xFE, 0x00, 0x00, 0x00, 0x00] == mem.read(-0x4, 24), to!string(mem.read(-0x4, 24)));
+		assert([0x00, 0x00, 0x00, 0x00] == mem.read(-0x4, 4));
+		assert([0x00, 0x00, 0x00, 0x00] == mem.read(-0x8, 4));
+		assert([0x00, 0x00, 0x00, 0x00] == mem.read(0x10, 4));
+		assert([0x00, 0x00, 0x00, 0x00] == mem.read(0x14, 4));
+	}
+
+	immutable(ubyte)[] read(long startAddr, uint count)
 	in
 	{
-		assert(typeOfStorage == TypeOfStorage.RAMStorage, "this type of memory doesn't support range read");
-		assert(startAddr + count < storage.length, "impossible range for read");
+		assert(typeOfStorage == TypeOfStorage.RAM, "this type of memory doesn't support range read");
 		assert(startAddr % uint.sizeof == 0, "start address  is misalligned");
-		assert(count % uint.sizeof == 0, "start address  is misalligned");
+		assert(count % uint.sizeof == 0, "end address  is misalligned");
+	}
+	out(result)
+	{
+		assert(result.length == count);
 	}
 	body
 	{
-		return storage[startAddr..startAddr+count].idup;
+		ubyte[] result;
+		long endAddr = startAddr + count;
+		long[] points = [startAddr, endAddr];
+
+		if(startAddr < 0 && endAddr > 0)
+		{
+			++(points.length);
+			points[$-1] = points[$-2];
+			points[$-2] = 0;
+		}
+
+		if(startAddr < cast(long)storage.length && cast(long)storage.length < endAddr)
+		{
+			++(points.length);
+			points[$-1] = points[$-2];
+			points[$-2] = storage.length;
+		}
+
+		foreach(i;0..points.length-1)
+		{
+			ubyte[] segment;
+			if(points[i] >= 0 && points[i + 1] <= storage.length)
+				segment = storage[points[i]..points[i + 1]];
+			else
+				segment = new ubyte[points[i + 1] - points[i]];
+			result ~= segment;
+		}
+
+		return result.idup;
 	}
 
 	void shiftHalfLeft()
