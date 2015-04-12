@@ -5,8 +5,9 @@ import gsvm.models.storage;
 import std.conv;
 import std.stdio;
 
-unittest
+enum OperationCode : ubyte
 {
+<<<<<<< HEAD
 	uint mem_size = 0x100000;
 
 	auto machine = new VM();
@@ -63,10 +64,16 @@ unittest
 	ram.write(0x0003_0000, for_bin_op); // for OR
 	ram.write(0x0004_0000, for_bin_op); // for XOR
 	ram.write(0x0005_0000, for_jmp); // for JMP, JN, CMP
+=======
+	NOP = 0x00, SYSCALL = 0x01, INVALID = 0x0F,
+	
+	NOT = 0x10, AND = 0x11, OR = 0x12, XOR = 0x13, SHL = 0x14, SHR = 0x15, SAL = 0x16, SAR = 0x17, SCL = 0x18, SCR = 0x19,
+>>>>>>> origin/feature-funarray
 
-	machine.connectStorage(ram);
-	machine.startExecution();
+	// IP means in place
+	INC = 0x20, DEC = 0x21, IPADD = 0x22, IPSUB = 0x23, ADD = 0x24, SUB = 0x25, UMUL = 0x28, UDIV = 0x29, MUL = 0x2A, DIV = 0x2B,
 
+<<<<<<< HEAD
 	/* TODO each command of unittest should send output in separate memory location. 
 	 * 
 	 * !!! 0x0 = reg_A (07.04.2015) 
@@ -92,13 +99,23 @@ unittest
 
 	auto xor_check = ram.read(0x00040000);
 	assert(0x1111_1010 == xor_check);
+=======
+	CMP = 0x30, JMP = 0x31, JE = 0x32, JNE = 0x33, JGR = 0x34, JLS = 0x35, JHG = 0x36, JLW = 0x37,
+
+	MOV = 0x40, INT = 0x41, SLI = 0x42, CLI = 0x43, HLT = 0x4F
+>>>>>>> origin/feature-funarray
 }
 
-class VM
+struct ProcessorCore
 {
-private:
-	static const uint default_mem_size = 0x100000;
+public:
+	enum uint registerSize = 0x1000u;
 
+private:
+	enum int half = (cast(long)registerSize) >>> 1;
+	enum int quarter = (cast(long)registerSize) >>> 2;
+
+<<<<<<< HEAD
 	/* Commands:
 	 * 
 	 *     NOP 0x00 empty iteration of VM
@@ -156,31 +173,54 @@ private:
 	uint reg_A = 0;
 	// compare register
 	uint reg_C = 0x0009_1996; // magic number. Temporary stub for CMP 
+=======
+	auto generalPourposeRegisters = Storage(registerSize, TypeOfStorage.GPR);
+	auto localProgrammRegister = Storage(registerSize, TypeOfStorage.Programm);
 
-public:
-	this(uint mem_size = this.default_mem_size)
-	{
-		this.mem_size = mem_size;
-		this.memory = new Storage(mem_size);
+	// registers in which make calculation
+	ulong first, second, third, fourth;
+	ubyte flags;
+>>>>>>> origin/feature-funarray
 
+	long localInstruction = half;
+	uint globalInstruction;
+
+<<<<<<< HEAD
 		// Registers initialization
 		reg_I = 0;
 		reg_A = 0; 
 		reg_C = 0x0009_1996;
+=======
+	Storage* memory;
+>>>>>>> origin/feature-funarray
 
-		assert(this.memory !is null);
-	}
+	alias HandlerType = void delegate(ubyte byteCount, 
+		ref uint firstParametr,
+		ref uint secondParametr,
+		ref uint thirdParametr,
+		ref uint fourthParametr);
 
-	uint getRegI()
+	HandlerType[] handlerVector;
+
+public:
+	this(Storage*  memory)
+	in
 	{
-		return reg_I;
+		assert(memory !is null, "processor core have to receive existing RAM");
+		assert(memory.typeOfStorage == TypeOfStorage.RAM, "memory have to have got RAM type");
 	}
-
-	uint getRegA()
+	body
 	{
-		return reg_A;
+		this.memory = memory;
+		handlerVector = new HandlerType[OperationCode.max + 1];
+		handlerVector[OperationCode.NOP] = &this.nopHandler;
+		handlerVector[OperationCode.NOT] = &this.notHandler;
+		foreach(ref handler; handlerVector)
+			if(handler is null)
+				handler = &this.invalidHandler;
 	}
 
+<<<<<<< HEAD
 	uint getRegC()
 	{
 		return reg_C;
@@ -189,16 +229,35 @@ public:
 	void connectStorage(Storage mem)
 	{
 		assert(mem !is null);
+=======
+>>>>>>> origin/feature-funarray
 
-		this.mem_size = mem.length;
-		this.memory = mem;
+	void runOneCommand()
+	{
+		import std.stdio: writeln;
+		uint[5] commandWithOperand;
+		commandWithOperand[0] = localProgrammRegister.read!uint(cast(uint)localInstruction);
+		//TODO calculate real count of operand
+		writeln("command and operand");
+		writeln("before:\n", commandWithOperand);
+		foreach(shift; 1..5)
+			commandWithOperand[shift] = generalPourposeRegisters.read!uint(cast(uint)localInstruction + shift*4);
+		handlerVector[cast(ubyte)(commandWithOperand[0] & 0xFF)](4, commandWithOperand[1], commandWithOperand[2], 
+			commandWithOperand[3], commandWithOperand[4]);
+		writeln("after:\n", commandWithOperand);
+		localInstruction+=4;
+		globalInstruction+=4;
 	}
 
-	void startExecution(uint start_addr = 0)
+	void loadProgramm(uint loadPosition)
 	{
-		assert(start_addr <= mem_size);
-		reg_I = start_addr;
+		localInstruction = half;
+		globalInstruction = loadPosition;
+		auto startCopy = cast(long)globalInstruction-localInstruction;
+		localProgrammRegister.write(0, memory.read(startCopy, registerSize));
+	}
 
+<<<<<<< HEAD
 		// TODO case when (reg_I = mem_size - 1) and it is command which take 2 arguments
 		while (reg_I != mem_size)
 		{
@@ -358,17 +417,75 @@ public:
 
 				default:
 					throw new Exception("Unknown opcode");
+=======
+	private void subLoadProgramm()
+	{
+		if(localInstruction < quarter)
+		{
+			if(localInstruction < 0)
+			{
+				localInstruction %= quarter;
+				localInstruction += half;
+				auto startCopy = cast(long)globalInstruction-localInstruction;
+				localProgrammRegister.write(0, memory.read(startCopy, registerSize));
+			}
+			else
+			{
+				auto startCopy = cast(long)globalInstruction-localInstruction;
+				localInstruction += half;
+				localProgrammRegister.shiftHalfRight();
+				localProgrammRegister.write(0, memory.read(startCopy, half));
+			}
+		}
+		else if (localInstruction >= half + quarter)
+		{
+			if(localInstruction >= registerSize)
+			{
+				localInstruction %= quarter;
+				localInstruction += half;
+				auto startCopy = cast(long)globalInstruction-localInstruction;
+				localProgrammRegister.write(0, memory.read(startCopy, registerSize));
+			}
+			else
+			{
+				localInstruction -= half;
+				auto startCopy = cast(long)globalInstruction-localInstruction;
+				localProgrammRegister.shiftHalfLeft();
+				localProgrammRegister.write(half, memory.read(startCopy, half));
+>>>>>>> origin/feature-funarray
 			}
 		}
 	}
 
-	void loadToMemory(uint start_pos, uint[] data)
+private:
+	void nopHandler(ubyte byteCount, 
+		ref uint firstParametr,
+		ref uint secondParametr,
+		ref uint thirdParametr,
+		ref uint fourthParametr)
 	{
-		assert(this.mem_size >= start_pos + data.length);
-		for (uint i = start_pos; i < start_pos + data.length; ++i)
-		{
-			memory.write(i, data[i - start_pos]);
-		}
+	}
+
+	void invalidHandler(ubyte byteCount, 
+		ref uint firstParametr,
+		ref uint secondParametr,
+		ref uint thirdParametr,
+		ref uint fourthParametr)
+	{
+		throw new Exception("impossible opcode");
+	}
+
+	void notHandler(ubyte byteCount, 
+		ref uint firstParametr,
+		ref uint secondParametr,
+		ref uint thirdParametr,
+		ref uint fourthParametr)
+	{
+		first = firstParametr;
+		second = ~first;
+		secondParametr = cast(uint)second;
+		subLoadProgramm();
 	}
 }
+
 
