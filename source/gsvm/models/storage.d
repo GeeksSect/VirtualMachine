@@ -149,6 +149,26 @@ unittest
 	{
 		assert(ae.msg == "impossible alligment");
 	}
+
+	try
+	{
+		auto mem = Storage(0x10, TypeOfStorage.GPR);
+		mem.shiftHalfLeft();
+	}
+	catch(AssertError ae)
+	{
+		assert(ae.msg == "this type of memory doesn't half memory shift");
+	}
+
+	try
+	{
+		auto mem = Storage(0x10, TypeOfStorage.GPR);
+		mem.shiftHalfRight();
+	}
+	catch(AssertError ae)
+	{
+		assert(ae.msg == "this type of memory doesn't half memory shift");
+	}
 }
 
 unittest
