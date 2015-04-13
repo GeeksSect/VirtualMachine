@@ -11,7 +11,7 @@ void main(string[] args)
 	try
 	{
 		auto memory = Storage(0xF000, TypeOfStorage.RAM);
-		memory.write(0x00, 0x00u);
+		memory.write(0x00, 0x00_33_FF_11u);
 		memory.write(0x04, 0x10u);
 		memory.write(0x08, 0x00u);
 		memory.write(0x0C, 0x04u);

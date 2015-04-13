@@ -61,6 +61,10 @@ public:
 		handlerVector = new HandlerType[OperationCode.max + 1];
 		handlerVector[OperationCode.NOP] = &this.nopHandler;
 		handlerVector[OperationCode.NOT] = &this.notHandler;
+		handlerVector[OperationCode.AND] = &this.andHandler;
+		handlerVector[OperationCode.OR]  = &this.orHandler;
+		handlerVector[OperationCode.XOR] = &this.xorHandler;
+		handlerVector[OperationCode.HLT] = &this.haltHandler;
 		foreach(ref handler; handlerVector)
 			if(handler is null)
 				handler = &this.invalidHandler;
@@ -80,8 +84,8 @@ public:
 		handlerVector[cast(ubyte)(commandWithOperand[0] & 0xFF)](4, commandWithOperand[1], commandWithOperand[2], 
 			commandWithOperand[3], commandWithOperand[4]);
 		writeln("after:\n", commandWithOperand);
-		localInstruction+=4;
-		globalInstruction+=4;
+		localInstruction += 4;
+		globalInstruction += 4;
 	}
 
 	void loadProgramm(uint loadPosition)
@@ -158,6 +162,54 @@ private:
 		second = ~first;
 		secondParametr = cast(uint)second;
 		subLoadProgramm();
+	}
+
+	void andHandler(ubyte byteCount, 
+		ref uint firstParametr,
+		ref uint secondParametr,
+		ref uint thirdParametr,
+		ref uint fourthParametr)
+	{
+		first = firstParametr;
+		second = secondParametr;
+		third = first & second;
+		thirdParametr = cast(uint)third;
+		subLoadProgramm();
+	}
+
+	void orHandler(ubyte byteCount, 
+		ref uint firstParametr,
+		ref uint secondParametr,
+		ref uint thirdParametr,
+		ref uint fourthParametr)
+	{
+		first = firstParametr;
+		second = secondParametr;
+		third = first | second;
+		thirdParametr = cast(uint)third;
+		subLoadProgramm();
+	}
+
+	void xorHandler(ubyte byteCount, 
+		ref uint firstParametr,
+		ref uint secondParametr,
+		ref uint thirdParametr,
+		ref uint fourthParametr)
+	{
+		first = firstParametr;
+		second = secondParametr;
+		third = first ^ second;
+		thirdParametr = cast(uint)third;
+		subLoadProgramm();
+	}
+
+	void haltHandler(ubyte byteCount, 
+		ref uint firstParametr,
+		ref uint secondParametr,
+		ref uint thirdParametr,
+		ref uint fourthParametr)
+	{
+		// TODO halt handler
 	}
 }
 
