@@ -149,6 +149,26 @@ unittest
 	{
 		assert(ae.msg == "impossible alligment");
 	}
+
+	try
+	{
+		auto mem = Storage(0x10, TypeOfStorage.GPR);
+		mem.shiftHalfLeft();
+	}
+	catch(AssertError ae)
+	{
+		assert(ae.msg == "this type of memory doesn't half memory shift");
+	}
+
+	try
+	{
+		auto mem = Storage(0x10, TypeOfStorage.GPR);
+		mem.shiftHalfRight();
+	}
+	catch(AssertError ae)
+	{
+		assert(ae.msg == "this type of memory doesn't half memory shift");
+	}
 }
 
 unittest
@@ -371,6 +391,14 @@ public:
 		return result.idup;
 	}
 
+	unittest
+	{
+		auto mem = Storage(8, TypeOfStorage.Programm);
+		mem.storage[] = [0xFE, 0xFE, 0xDC, 0xBA, 0x12, 0x34, 0x56, 0x78];
+		mem.shiftHalfLeft();
+		assert(mem.storage == [0x12, 0x34, 0x56, 0x78, 0x12, 0x34, 0x56, 0x78]);
+	}
+
 	void shiftHalfLeft()
 	in
 	{
@@ -381,6 +409,14 @@ public:
 		auto half = storage.length >>> 1;
 		foreach(addr; 0..half)
 			storage[addr] = storage[addr + half];
+	}
+
+	unittest
+	{
+		auto mem = Storage(8, TypeOfStorage.Programm);
+		mem.storage[] = [0xFE, 0xFE, 0xDC, 0xBA, 0x12, 0x34, 0x56, 0x78];
+		mem.shiftHalfRight();
+		assert(mem.storage == [0xFE, 0xFE, 0xDC, 0xBA, 0xFE, 0xFE, 0xDC, 0xBA]);
 	}
 
 	void shiftHalfRight()
