@@ -32,7 +32,7 @@ private:
 	auto localProgrammRegister = Storage(registerSize, TypeOfStorage.Programm);
 
 	// registers in which make calculation
-	ulong first, second, third, fourth;
+	ulong[4] calcRegisters;
 	ubyte flags;
 
 	long localInstruction = half;
@@ -40,11 +40,7 @@ private:
 
 	Storage* memory;
 
-	alias HandlerType = void delegate(ubyte byteCount, 
-		ref uint firstParametr,
-		ref uint secondParametr,
-		ref uint thirdParametr,
-		ref uint fourthParametr);
+	alias HandlerType = void delegate();
 
 	HandlerType[] handlerVector;
 
@@ -70,22 +66,23 @@ public:
 				handler = &this.invalidHandler;
 	}
 
-
 	void runOneCommand()
 	{
 		import std.stdio: writeln;
-		uint[5] commandWithOperand;
-		commandWithOperand[0] = localProgrammRegister.read!uint(cast(uint)localInstruction);
-		//TODO calculate real count of operand
-		writeln("command and operand");
-		writeln("before:\n", commandWithOperand);
-		foreach(shift; 1..5)
-			commandWithOperand[shift] = generalPourposeRegisters.read!uint(cast(uint)localInstruction + shift*4);
-		handlerVector[cast(ubyte)(commandWithOperand[0] & 0xFF)](4, commandWithOperand[1], commandWithOperand[2], 
-			commandWithOperand[3], commandWithOperand[4]);
-		writeln("after:\n", commandWithOperand);
+		uint command = localProgrammRegister.read!uint(cast(uint)localInstruction);
 		localInstruction += 4;
 		globalInstruction += 4;
+		//TODO calculate real count of operand
+		writeln("command and operand");
+		foreach(shift; 0..4)
+		{
+			calcRegisters[shift] = localProgrammRegister.read!uint(cast(uint)localInstruction);
+			localInstruction += 4;
+			globalInstruction += 4;
+		}
+		writeln("before:\n", command, calcRegisters);
+		handlerVector[cast(ubyte)(command & 0xFF)]();
+		writeln("after:\n", command, calcRegisters);
 	}
 
 	void loadProgramm(uint loadPosition)
@@ -135,83 +132,36 @@ public:
 	}
 
 private:
-	void nopHandler(ubyte byteCount, 
-		ref uint firstParametr,
-		ref uint secondParametr,
-		ref uint thirdParametr,
-		ref uint fourthParametr)
+	void nopHandler()
 	{
 	}
 
-	void invalidHandler(ubyte byteCount, 
-		ref uint firstParametr,
-		ref uint secondParametr,
-		ref uint thirdParametr,
-		ref uint fourthParametr)
+	void invalidHandler()
 	{
 		throw new Exception("impossible opcode");
 	}
 
-	void notHandler(ubyte byteCount, 
-		ref uint firstParametr,
-		ref uint secondParametr,
-		ref uint thirdParametr,
-		ref uint fourthParametr)
+	void notHandler()
 	{
-		first = firstParametr;
-		second = ~first;
-		secondParametr = cast(uint)second;
-		subLoadProgramm();
+		calcRegisters[1] = ~calcRegisters[0];
 	}
 
-	void andHandler(ubyte byteCount, 
-		ref uint firstParametr,
-		ref uint secondParametr,
-		ref uint thirdParametr,
-		ref uint fourthParametr)
+	void andHandler()
 	{
-		//first = firstParametr;
-		//second = secondParametr;
-		localInstruction += 4;
-		first = localProgrammRegister.read!uint(cast(uint)localInstruction);
-		localInstruction += 4;
-		second = localProgrammRegister.read!uint(cast(uint)localInstruction);
-		third = first & second;
-		thirdParametr = cast(uint)third;
-		subLoadProgramm();
+		calcRegisters[2] = calcRegisters[0] & calcRegisters[1];
 	}
 
-	void orHandler(ubyte byteCount, 
-		ref uint firstParametr,
-		ref uint secondParametr,
-		ref uint thirdParametr,
-		ref uint fourthParametr)
+	void orHandler()
 	{
-		first = firstParametr;
-		second = secondParametr;
-		third = first | second;
-		thirdParametr = cast(uint)third;
-		subLoadProgramm();
+		calcRegisters[2] = calcRegisters[0] | calcRegisters[1];
 	}
 
-	void xorHandler(ubyte byteCount, 
-		ref uint firstParametr,
-		ref uint secondParametr,
-		ref uint thirdParametr,
-		ref uint fourthParametr)
+	void xorHandler()
 	{
-		first = firstParametr;
-		second = secondParametr;
-		third = first ^ second;
-		thirdParametr = cast(uint)third;
-		subLoadProgramm();
+		calcRegisters[2] = calcRegisters[0] ^ calcRegisters[1];
 	}
 
-	void haltHandler(ubyte byteCount, 
-		ref uint firstParametr,
-		ref uint secondParametr,
-		ref uint thirdParametr,
-		ref uint fourthParametr)
+	void haltHandler()
 	{
 		// TODO halt handler
 	}
