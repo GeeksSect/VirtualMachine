@@ -170,8 +170,12 @@ private:
 		ref uint thirdParametr,
 		ref uint fourthParametr)
 	{
-		first = firstParametr;
-		second = secondParametr;
+		//first = firstParametr;
+		//second = secondParametr;
+		localInstruction += 4;
+		first = localProgrammRegister.read!uint(cast(uint)localInstruction);
+		localInstruction += 4;
+		second = localProgrammRegister.read!uint(cast(uint)localInstruction);
 		third = first & second;
 		thirdParametr = cast(uint)third;
 		subLoadProgramm();
