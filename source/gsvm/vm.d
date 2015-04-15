@@ -4,6 +4,7 @@ import gsvm.models.storage;
 
 import std.conv;
 import std.stdio;
+import std.traits;
 
 enum OperationCode : ubyte
 {
@@ -208,4 +209,25 @@ private:
 	}
 }
 
+
+unittest
+{
+	assert(5 == onesCount(0b01001_1011));
+	assert(5 == onesCount(0b01001_1011u));
+	assert(5 == onesCount(cast(short)0b01001_1011));
+	assert(3 == onesCount!(int, 4uL)(0b01001_1011));
+}
+
+private ubyte onesCount(T, size_t bitCount = T.sizeof * 8)(T number)
+	if(isIntegral!T)
+{
+	typeof(return) result;
+	Unsigned!T zond = 1u;
+	foreach(i; 0..bitCount)
+	{
+		result += zond & number ? 1 : 0;
+		zond <<= 1;
+	}
+	return result;
+}
 
