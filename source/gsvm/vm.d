@@ -35,6 +35,9 @@ private:
 	ulong[4] calcRegisters;
 	ubyte flags;
 
+	// register in which placed result of compare
+	ulong compareRegister;
+
 	long localInstruction = half;
 	uint globalInstruction;
 
@@ -60,6 +63,10 @@ public:
 		handlerVector[OperationCode.AND] = &this.andHandler;
 		handlerVector[OperationCode.OR]  = &this.orHandler;
 		handlerVector[OperationCode.XOR] = &this.xorHandler;
+		handlerVector[OperationCode.CMP] = &this.cmpHandler;
+		handlerVector[OperationCode.JMP] = &this.jmpHandler;
+		handlerVector[OperationCode.JE]  = &this.jeHandler;
+		handlerVector[OperationCode.JNE] = &this.jneHandler;
 		handlerVector[OperationCode.HLT] = &this.haltHandler;
 		foreach(ref handler; handlerVector)
 			if(handler is null)
@@ -69,6 +76,8 @@ public:
 	void runOneCommand()
 	{
 		import std.stdio: writeln;
+		writeln("localInstruction: ", localInstruction);
+		writeln("globalInstruction: ", globalInstruction);
 		uint command = localProgrammRegister.read!uint(cast(uint)localInstruction);
 		localInstruction += 4;
 		globalInstruction += 4;
@@ -159,6 +168,38 @@ private:
 	void xorHandler()
 	{
 		calcRegisters[2] = calcRegisters[0] ^ calcRegisters[1];
+	}
+
+	void jmpHandler()
+	{
+		auto diff = globalInstruction - calcRegisters[0];
+		localInstruction -= diff;
+		globalInstruction -= diff;
+	}
+
+	void cmpHandler()
+	{
+		compareRegister = calcRegisters[0] - calcRegisters[1];
+	}
+
+	void jeHandler()
+	{
+		if (!compareRegister)
+		{
+			auto diff = globalInstruction - calcRegisters[0];
+			localInstruction -= diff;
+			globalInstruction -= diff;
+		}
+	}
+
+	void jneHandler()
+	{
+		if (compareRegister)
+		{
+			auto diff = globalInstruction - calcRegisters[0];
+			localInstruction -= diff;
+			globalInstruction -= diff;		
+		}
 	}
 
 	void haltHandler()
