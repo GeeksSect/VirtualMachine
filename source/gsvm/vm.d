@@ -2,23 +2,11 @@
 
 import gsvm.models.storage;
 
+import spec.common;
+
 import std.conv;
 import std.stdio;
 import std.traits;
-
-enum OperationCode : ubyte
-{
-	NOP = 0x00, SYSCALL = 0x01, INVALID = 0x0F,
-	
-	NOT = 0x10, AND = 0x11, OR = 0x12, XOR = 0x13, SHL = 0x14, SHR = 0x15, SAL = 0x16, SAR = 0x17, SCL = 0x18, SCR = 0x19,
-
-	// IP means in place
-	INC = 0x20, DEC = 0x21, IPADD = 0x22, IPSUB = 0x23, ADD = 0x24, SUB = 0x25, UMUL = 0x28, UDIV = 0x29, MUL = 0x2A, DIV = 0x2B,
-
-	CMP = 0x30, JMP = 0x31, JE = 0x32, JNE = 0x33, JGR = 0x34, JLS = 0x35, JHG = 0x36, JLW = 0x37,
-
-	MOV = 0x40, INT = 0x41, SLI = 0x42, CLI = 0x43, HLT = 0x4F
-}
 
 struct ProcessorCore
 {
@@ -209,6 +197,21 @@ private:
 	}
 }
 
+unittest
+{
+	assert(0 == paramsCount(0x0000_0000));
+	assert(1 == paramsCount(0x4100_1110));
+	assert(1 == paramsCount(0x4101_1110));
+	assert(4 == paramsCount(0x4F28_C329));
+	assert(3 == paramsCount(0x1700_4324));
+	assert(3 == paramsCount(0x2701_4325));
+	assert(2 == paramsCount(0x4300_0330));
+}
+
+private auto paramsCount(uint comand)
+{
+	return onesCount!(typeof(comand), 4)((comand & paramCountMask) >> paramCountShift);
+}
 
 unittest
 {
