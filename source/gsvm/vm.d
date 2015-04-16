@@ -67,20 +67,21 @@ public:
 		import std.stdio: writeln;
 		writeln("localInstruction: ", localInstruction);
 		writeln("globalInstruction: ", globalInstruction);
-		uint command = localProgrammRegister.read!uint(cast(uint)localInstruction);
+		uint comand = localProgrammRegister.read!uint(cast(uint)localInstruction);
 		localInstruction += 4;
 		globalInstruction += 4;
-		//TODO calculate real count of operand
 		writeln("command and operand");
-		foreach(shift; 0..4)
+		auto countOfParams = paramsCount(comand);
+		foreach(shift; 0..countOfParams)
 		{
+			//TODO load according directness, read/write access, byte count
 			calcRegisters[shift] = localProgrammRegister.read!uint(cast(uint)localInstruction);
 			localInstruction += 4;
 			globalInstruction += 4;
 		}
-		writeln("before:\n", command, calcRegisters);
-		handlerVector[cast(ubyte)(command & 0xFF)]();
-		writeln("after:\n", command, calcRegisters);
+		writeln("before:\n", comand, calcRegisters);
+		handlerVector[cast(ubyte)(comand & 0xFF)]();
+		writeln("after:\n", comand, calcRegisters);
 	}
 
 	void loadProgramm(uint loadPosition)
