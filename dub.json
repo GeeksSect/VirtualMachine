@@ -1,9 +1,12 @@
 {
 	"name": "gsvm",
 	"description": "Virtual Machine",
-	"authors": ["HaraldZealot", "krucios", "z4p", "AlexeyKatomachin", "ArtemMeleshko"],
+	"authors": ["HaraldZealot", "krucios", "z4p", "AlexeyKatomachin", "ArtemMeleshko", "alexFrankfurt", "ArtsemenkaUladzimir", "sergei2401"],
 	"homepage": "https://github.com/GeeksSect/VirtualMachine",
-	"copyright": "Copyright (c) 2015 Aliaksei Stankevich, Andrei Pazniak, Pavel Radkevich, Alexey Katomachin, Artem Meleshko",
+	"copyright": "Copyright (c) 2015 Aliaksei Stankevich, Andrei Pazniak, Pavel Radkevich, Alexey Katomachin, Artem Meleshko, Aliaksandr Mitskevich, Artsemenka Uladzimir, Slabadniak Siargey",
+	"dependencies": {
+		"gsspec": {"path": "../Specification"}
+	},
 	"configurations":[
 		{
 			"name": "standalone",
