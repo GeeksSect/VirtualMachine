@@ -21,7 +21,7 @@ void main(string[] args)
 		memory.write(0x1C, 0x0000_0000u); // arg 3
 		memory.write(0x20, 0x4700_0031u); // jmp
 		memory.write(0x24, 0x0000_0000u); // arg 1
-		writeln(memory.read(0x00, 16));
+		writeln(memory.read(0x00, 40));
 		auto vm = ProcessorCore(&memory);
 		vm.loadProgramm(0x00);
 		vm.runOneCommand();

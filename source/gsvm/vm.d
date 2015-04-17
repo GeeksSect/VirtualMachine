@@ -71,20 +71,21 @@ public:
 			writeln("globalInstruction: ", globalInstruction);
 		}
 		uint comand = localProgrammRegister.read!uint(cast(uint)localInstruction);
-		localInstruction += 4;
-		globalInstruction += 4;
 		debug writeln("command and operand");
 		auto countOfParams = paramsCount(comand);
+		auto operandOrigin = localInstruction + 4;
 		foreach(shift; 0..countOfParams)
 		{
 			//TODO load according directness, read/write access, byte count
-			calcRegisters[shift] = localProgrammRegister.read!uint(cast(uint)localInstruction);
-			localInstruction += 4;
-			globalInstruction += 4;
+			calcRegisters[shift] = localProgrammRegister.read!uint(cast(uint)(operandOrigin + 4 * shift));
 		}
+		auto comandDiff = uint.sizeof * (1 + countOfParams);
+		localInstruction += comandDiff;
+		globalInstruction += comandDiff;
 		debug writeln("before:\n", comand, calcRegisters);
 		handlerVector[cast(ubyte)(comand & 0xFF)]();
 		debug writeln("after:\n", comand, calcRegisters);
+
 	}
 
 	void loadProgramm(uint loadPosition)
@@ -165,7 +166,10 @@ private:
 
 	void jmpHandler()
 	{
-		auto diff = globalInstruction - calcRegisters[0];
+		debug writeln("gi ", globalInstruction);
+		debug writeln("cr[0] ", calcRegisters[0]);
+		auto diff = cast(long)globalInstruction - cast(long)calcRegisters[0];
+		debug writeln("diff ", diff);
 		localInstruction -= diff;
 		globalInstruction -= diff;
 	}
