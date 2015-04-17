@@ -64,13 +64,16 @@ public:
 
 	void runOneCommand()
 	{
-		import std.stdio: writeln;
-		writeln("localInstruction: ", localInstruction);
-		writeln("globalInstruction: ", globalInstruction);
+		debug
+		{
+			import std.stdio: writeln;
+			writeln("localInstruction: ", localInstruction);
+			writeln("globalInstruction: ", globalInstruction);
+		}
 		uint comand = localProgrammRegister.read!uint(cast(uint)localInstruction);
 		localInstruction += 4;
 		globalInstruction += 4;
-		writeln("command and operand");
+		debug writeln("command and operand");
 		auto countOfParams = paramsCount(comand);
 		foreach(shift; 0..countOfParams)
 		{
@@ -79,9 +82,9 @@ public:
 			localInstruction += 4;
 			globalInstruction += 4;
 		}
-		writeln("before:\n", comand, calcRegisters);
+		debug writeln("before:\n", comand, calcRegisters);
 		handlerVector[cast(ubyte)(comand & 0xFF)]();
-		writeln("after:\n", comand, calcRegisters);
+		debug writeln("after:\n", comand, calcRegisters);
 	}
 
 	void loadProgramm(uint loadPosition)
