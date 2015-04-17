@@ -73,11 +73,21 @@ public:
 		uint comand = localProgrammRegister.read!uint(cast(uint)localInstruction);
 		debug writeln("command and operand");
 		auto countOfParams = paramsCount(comand);
-		auto operandOrigin = localInstruction + 4;
-		foreach(shift; 0..countOfParams)
+		auto paramOrigin = localInstruction + 4;
+		foreach(param; 0..countOfParams)
 		{
 			//TODO load according directness, read/write access, byte count
-			calcRegisters[shift] = localProgrammRegister.read!uint(cast(uint)(operandOrigin + 4 * shift));
+			if(comand.haveToRead(param))
+			{
+				auto value = localProgrammRegister.read!uint(cast(uint)(paramOrigin + 4 * param));
+				if(!comand.isDirect(param))
+				{
+					value = generalPourposeRegisters.read!uint(value);
+					if(comand.isIndirect(param))
+						value = generalPourposeRegisters.read!uint(value);
+				}
+				calcRegisters[param] = value;
+			}
 		}
 		auto comandDiff = uint.sizeof * (1 + countOfParams);
 		localInstruction += comandDiff;
@@ -85,7 +95,18 @@ public:
 		debug writeln("before:\n", comand, calcRegisters);
 		handlerVector[cast(ubyte)(comand & 0xFF)]();
 		debug writeln("after:\n", comand, calcRegisters);
-
+		foreach(param; 0..countOfParams)
+		{
+			if(comand.haveToWrite(param))
+			{
+				auto address = localProgrammRegister.read!uint(cast(uint)(paramOrigin + 4 * param));
+				if(comand.isDirect(param))
+					throw new Exception("Try to write in direct address");
+				if(comand.isIndirect(param))
+					address = generalPourposeRegisters.read!uint(address);
+				generalPourposeRegisters.write(address, cast(uint)calcRegisters[param]);
+			}
+		}
 	}
 
 	void loadProgramm(uint loadPosition)
@@ -240,5 +261,15 @@ private ubyte onesCount(T, size_t bitCount = T.sizeof * 8)(T number)
 		zond <<= 1;
 	}
 	return result;
+}
+
+alias haveToRead = isSpecifiedBitFlagged!(readFlagsMask, readFlagsShift);
+alias haveToWrite = isSpecifiedBitFlagged!(writeFlagsMask, writeFlagsShift);
+alias isDirect = isSpecifiedBitFlagged!(directFlagsMask, directFlagsShift);
+alias isIndirect = isSpecifiedBitFlagged!(indirectFlagsMask, indirectFlagsShift);
+
+private bool isSpecifiedBitFlagged(uint mask, uint shift)(uint comand, int operandNumer)
+{
+	return cast(bool)(((comand & mask) >> shift) & (1u << operandNumer));
 }
 
