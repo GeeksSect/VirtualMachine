@@ -107,6 +107,7 @@ public:
 				generalPourposeRegisters.write(address, cast(uint)calcRegisters[param]);
 			}
 		}
+		debug generalPourposeRegisters.dump(0,8);
 	}
 
 	void loadProgramm(uint loadPosition)

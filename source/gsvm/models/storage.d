@@ -432,3 +432,28 @@ public:
 	}
 }
 
+debug
+{
+	import std.stdio;
+	void dump(Storage memory, uint from, uint to)
+	in
+	{
+		assert(from % uint.sizeof == 0);
+		assert(to % uint.sizeof == 0);
+		assert(from <= to);
+	}
+	body
+	{
+		writeln("dump: ");
+		foreach(i; from..to)
+		{
+			if(i %4 == 0)
+				writef("%04X:   ", i);
+			writef("%02X ", memory.storage[i]);
+			if(i % 4 == 3)
+				writeln();
+		}
+		writeln();
+	}
+}
+
