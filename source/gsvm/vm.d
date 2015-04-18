@@ -198,7 +198,20 @@ private:
 
 	void cmpHandler()
 	{
-		compareRegister = calcRegisters[0] - calcRegisters[1];
+
+		calcRegisters[2] = calcRegisters[0] - calcRegisters[1];
+		flags |= 1u;
+		if(calcRegisters[2]!=0)
+			flags^=1u;
+
+		flags |= 2u;
+		if(calcRegisters[2]<=0)
+			flags^=2u;
+
+		flags |= 4u;
+			if(calcRegisters[2]>=0)
+			flags^=4u;
+
 	}
 
 	void jeHandler()
