@@ -216,7 +216,7 @@ private:
 
 	void jeHandler()
 	{
-		if (!compareRegister)
+		if (flags & 1u)
 		{
 			auto diff = globalInstruction - calcRegisters[0];
 			localInstruction -= diff;
@@ -226,7 +226,7 @@ private:
 
 	void jneHandler()
 	{
-		if (compareRegister)
+		if (!(flags & 1u))
 		{
 			auto diff = globalInstruction - calcRegisters[0];
 			localInstruction -= diff;
