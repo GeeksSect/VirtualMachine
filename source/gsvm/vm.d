@@ -342,16 +342,16 @@ void handler(ubyte opcode)(ref ProcessorCore pc)
 {
 	pc.calcRegisters[2] = pc.calcRegisters[0] - pc.calcRegisters[1];
 	pc.flags |= 1u;
-	if(pc.calcRegisters[2]!=0)
-		pc.flags^=1u;
+	if(pc.calcRegisters[2] != 0)
+		pc.flags ^= 1u;
 
 	pc.flags |= 2u;
-	if(pc.calcRegisters[2]<=0)
-		pc.flags^=2u;
+	if(pc.calcRegisters[2] <= 0)
+		pc.flags ^= 2u;
 
 	pc.flags |= 4u;
-	if(pc.calcRegisters[2]>=0)
-		pc.flags^=4u;
+	if(pc.calcRegisters[2] >= 0)
+		pc.flags ^= 4u;
 }
 
 void handler(ubyte opcode)(ref ProcessorCore pc)
