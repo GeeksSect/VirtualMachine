@@ -5,8 +5,16 @@ import gsvm.models.storage;
 import spec.common;
 
 import std.conv;
-import std.stdio;
 import std.traits;
+
+enum typeof(ProcessorCore.flags) equalFlag = 1u << 0;
+enum typeof(ProcessorCore.flags) greatFlag = 1u << 1;
+enum typeof(ProcessorCore.flags) lessFlag = 1u << 2;
+enum typeof(ProcessorCore.flags) highFlag = 1u << 3;
+enum typeof(ProcessorCore.flags) lowFlag = 1u << 4;
+enum typeof(ProcessorCore.flags) kernelFlag = 1u << 5;
+enum typeof(ProcessorCore.flags) allowInterruptionFlag = 1u << 6;
+enum typeof(ProcessorCore.flags) haltFlag = 1u << 7;
 
 struct ProcessorCore
 {
@@ -21,6 +29,7 @@ private:
 	auto localProgrammRegister = Storage(registerSize, TypeOfStorage.Programm);
 
 	ulong[4] calcRegisters;
+
 	ubyte flags;
 
 	long localInstruction = half;
@@ -341,17 +350,17 @@ void handler(ubyte opcode)(ref ProcessorCore pc)
 	if(opcode == OperationCode.CMP)
 {
 	pc.calcRegisters[2] = pc.calcRegisters[0] - pc.calcRegisters[1];
-	pc.flags |= 1u;
+	pc.flags |= equalFlag;
 	if(pc.calcRegisters[2] != 0)
-		pc.flags ^= 1u;
+		pc.flags ^= equalFlag;
 
-	pc.flags |= 2u;
+	pc.flags |= greatFlag;
 	if(pc.calcRegisters[2] <= 0)
-		pc.flags ^= 2u;
+		pc.flags ^= greatFlag;
 
-	pc.flags |= 4u;
+	pc.flags |= lessFlag;
 	if(pc.calcRegisters[2] >= 0)
-		pc.flags ^= 4u;
+		pc.flags ^= lessFlag;
 }
 
 void handler(ubyte opcode)(ref ProcessorCore pc)
