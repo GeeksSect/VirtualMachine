@@ -24,9 +24,6 @@ private:
 	ulong[4] calcRegisters;
 	ubyte flags;
 
-	// register in which placed result of compare
-	ulong compareRegister;
-
 	long localInstruction = half;
 	uint globalInstruction;
 
