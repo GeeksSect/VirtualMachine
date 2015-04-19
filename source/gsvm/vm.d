@@ -20,7 +20,6 @@ private:
 	auto generalPourposeRegisters = Storage(registerSize, TypeOfStorage.GPR);
 	auto localProgrammRegister = Storage(registerSize, TypeOfStorage.Programm);
 
-	// registers in which make calculation
 	ulong[4] calcRegisters;
 	ubyte flags;
 
@@ -29,9 +28,7 @@ private:
 
 	Storage* memory;
 
-	alias HandlerType = void delegate();
-
-	HandlerType[] handlerVector;
+	enum handlerVector = initializeHandlerVector();
 
 public:
 	this(Storage*  memory)
@@ -43,20 +40,6 @@ public:
 	body
 	{
 		this.memory = memory;
-		handlerVector = new HandlerType[OperationCode.max + 1];
-		handlerVector[OperationCode.NOP] = &this.nopHandler;
-		handlerVector[OperationCode.NOT] = &this.notHandler;
-		handlerVector[OperationCode.AND] = &this.andHandler;
-		handlerVector[OperationCode.OR]  = &this.orHandler;
-		handlerVector[OperationCode.XOR] = &this.xorHandler;
-		handlerVector[OperationCode.CMP] = &this.cmpHandler;
-		handlerVector[OperationCode.JMP] = &this.jmpHandler;
-		handlerVector[OperationCode.JE]  = &this.jeHandler;
-		handlerVector[OperationCode.JNE] = &this.jneHandler;
-		handlerVector[OperationCode.HLT] = &this.haltHandler;
-		foreach(ref handler; handlerVector)
-			if(handler is null)
-				handler = &this.invalidHandler;
 	}
 
 	void runOneCommand()
@@ -73,7 +56,7 @@ public:
 		auto paramOrigin = localInstruction + 4;
 		foreach(param; 0..countOfParams)
 		{
-			//TODO load according directness, read/write access, byte count
+			//TODO load according byte count
 			if(comand.haveToRead(param))
 			{
 				auto value = localProgrammRegister.read!uint(cast(uint)(paramOrigin + 4 * param));
@@ -90,7 +73,7 @@ public:
 		localInstruction += comandDiff;
 		globalInstruction += comandDiff;
 		debug writeln("before:\n", comand, calcRegisters);
-		handlerVector[cast(ubyte)(comand & 0xFF)]();
+		handlerVector[cast(ubyte)(comand & 0xFF)](this);
 		debug writeln("after:\n", comand, calcRegisters);
 		foreach(param; 0..countOfParams)
 		{
@@ -152,90 +135,9 @@ public:
 			}
 		}
 	}
+}
 
 private:
-	void nopHandler()
-	{
-	}
-
-	void invalidHandler()
-	{
-		throw new Exception("impossible opcode");
-	}
-
-	void notHandler()
-	{
-		calcRegisters[1] = ~calcRegisters[0];
-	}
-
-	void andHandler()
-	{
-		calcRegisters[2] = calcRegisters[0] & calcRegisters[1];
-	}
-
-	void orHandler()
-	{
-		calcRegisters[2] = calcRegisters[0] | calcRegisters[1];
-	}
-
-	void xorHandler()
-	{
-		calcRegisters[2] = calcRegisters[0] ^ calcRegisters[1];
-	}
-
-	void jmpHandler()
-	{
-		debug writeln("gi ", globalInstruction);
-		debug writeln("cr[0] ", calcRegisters[0]);
-		auto diff = cast(long)globalInstruction - cast(long)calcRegisters[0];
-		debug writeln("diff ", diff);
-		localInstruction -= diff;
-		globalInstruction -= diff;
-	}
-
-	void cmpHandler()
-	{
-
-		calcRegisters[2] = calcRegisters[0] - calcRegisters[1];
-		flags |= 1u;
-		if(calcRegisters[2]!=0)
-			flags^=1u;
-
-		flags |= 2u;
-		if(calcRegisters[2]<=0)
-			flags^=2u;
-
-		flags |= 4u;
-			if(calcRegisters[2]>=0)
-			flags^=4u;
-
-	}
-
-	void jeHandler()
-	{
-		if (flags & 1u)
-		{
-			auto diff = globalInstruction - calcRegisters[0];
-			localInstruction -= diff;
-			globalInstruction -= diff;
-		}
-	}
-
-	void jneHandler()
-	{
-		if (!(flags & 1u))
-		{
-			auto diff = globalInstruction - calcRegisters[0];
-			localInstruction -= diff;
-			globalInstruction -= diff;		
-		}
-	}
-
-	void haltHandler()
-	{
-		// TODO halt handler
-	}
-}
 
 unittest
 {
@@ -248,7 +150,7 @@ unittest
 	assert(2 == paramsCount(0x4300_0330));
 }
 
-private auto paramsCount(uint comand)
+auto paramsCount(uint comand)
 {
 	return onesCount!(typeof(comand), 4)((comand & paramCountMask) >> paramCountShift);
 }
@@ -261,7 +163,7 @@ unittest
 	assert(3 == onesCount!(int, 4uL)(0b01001_1011));
 }
 
-private ubyte onesCount(T, size_t bitCount = T.sizeof * 8)(T number)
+ubyte onesCount(T, size_t bitCount = T.sizeof * 8)(T number)
 	if(isIntegral!T)
 {
 	typeof(return) result;
@@ -279,8 +181,257 @@ alias haveToWrite = isSpecifiedBitFlagged!(writeFlagsMask, writeFlagsShift);
 alias isDirect = isSpecifiedBitFlagged!(directFlagsMask, directFlagsShift);
 alias isIndirect = isSpecifiedBitFlagged!(indirectFlagsMask, indirectFlagsShift);
 
-private bool isSpecifiedBitFlagged(uint mask, uint shift)(uint comand, int operandNumer)
+bool isSpecifiedBitFlagged(uint mask, uint shift)(uint comand, int operandNumer)
 {
 	return cast(bool)(((comand & mask) >> shift) & (1u << operandNumer));
+}
+
+alias HandlerType = void function(ref ProcessorCore);
+
+HandlerType[OperationCode.max + 1] initializeHandlerVector()
+{
+	import std.traits;
+	typeof(return) result;
+	foreach(m; EnumMembers!OperationCode)
+		result[m] = &handler!m;
+	foreach(ref e; result)
+		if(e is null)
+			e = &handler!(OperationCode.INVALID);
+	return result;
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.NOP)
+{
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.INVALID)
+{
+	throw new Exception("impossible opcode");
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.NOT)
+{
+	pc.calcRegisters[1] = ~pc.calcRegisters[0];
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.SYSCALL)
+{
+	//TODO system call handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.AND)
+{
+	pc.calcRegisters[2] = pc.calcRegisters[0] & pc.calcRegisters[1];
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.OR)
+{
+	pc.calcRegisters[2] = pc.calcRegisters[0] | pc.calcRegisters[1];
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.XOR)
+{
+	pc.calcRegisters[2] = pc.calcRegisters[0] ^ pc.calcRegisters[1];
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.SHL)
+{
+	//TODO logical left shift handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.SHR)
+{
+	//TODO logical right shift handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.SAL)
+{
+	//TODO arithmetic left shift handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.SAR)
+{
+	//TODO arithmetic right shift handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.SCL)
+{
+	//TODO cyclic left shift handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.SCR)
+{
+	//TODO cyclic rigt shift handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.INC)
+{
+	//TODO increment handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.DEC)
+{
+	//TODO decrement handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.IPADD)
+{
+	//TODO inplace addition handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.IPSUB)
+{
+	//TODO inplace substraction handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.ADD)
+{
+	//TODO addition handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.SUB)
+{
+	//TODO substraction handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.UMUL)
+{
+	//TODO unsigned multiplication handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.UDIV)
+{
+	//TODO unsigned division handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.MUL)
+{
+	//TODO signed multiplication handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.DIV)
+{
+	//TODO signed division handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.CMP)
+{
+	pc.calcRegisters[2] = pc.calcRegisters[0] - pc.calcRegisters[1];
+	pc.flags |= 1u;
+	if(pc.calcRegisters[2]!=0)
+		pc.flags^=1u;
+
+	pc.flags |= 2u;
+	if(pc.calcRegisters[2]<=0)
+		pc.flags^=2u;
+
+	pc.flags |= 4u;
+	if(pc.calcRegisters[2]>=0)
+		pc.flags^=4u;
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.JMP)
+{
+	pc.jumpImplementation();
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.JE)
+{
+	if (pc.flags & 1u)
+		pc.jumpImplementation();
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.JNE)
+{
+	if (!(pc.flags & 1u))
+		pc.jumpImplementation();
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.JGR)
+{
+	//TODO jumpIfGreat handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.JLS)
+{
+	//TODO jumpIfLess handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.JHG)
+{
+	//TODO jumpIfHigh handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.JLW)
+{
+	//TODO jumpIfLow handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.MOV)
+{
+	//TODO move handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.INT)
+{
+	//TODO iterruption handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.SLI)
+{
+	//TODO enable interruption handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.CLI)
+{
+	//TODO disable interruption handler
+}
+
+void handler(ubyte opcode)(ref ProcessorCore pc)
+	if(opcode == OperationCode.HLT)
+{
+	// TODO halt handler
+}
+
+void jumpImplementation(ref ProcessorCore pc)
+{
+	auto diff = cast(long)pc.globalInstruction - cast(long)pc.calcRegisters[0];
+	pc.localInstruction -= diff;
+	pc.globalInstruction -= diff;
 }
 
