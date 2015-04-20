@@ -150,6 +150,22 @@ private:
 
 unittest
 {
+	assert(0 == byteCount(0x0000_0000));
+	assert(4 == byteCount(0x4100_1110));
+	assert(4 == byteCount(0x4101_1110));
+	assert(4 == byteCount(0x4F28_C329));
+	assert(1 == byteCount(0x1700_4324));
+	assert(2 == byteCount(0x2701_4325));
+	assert(4 == byteCount(0x4300_0330));
+}
+
+uint byteCount(uint comand)
+{
+	return (comand & byteCountMask) >> byteCountShift;
+}
+
+unittest
+{
 	assert(0 == paramsCount(0x0000_0000));
 	assert(1 == paramsCount(0x4100_1110));
 	assert(1 == paramsCount(0x4101_1110));
