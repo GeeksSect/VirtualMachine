@@ -54,7 +54,15 @@ public:
 		this.memory = memory;
 	}
 
-	void runOneCommand()
+	void runProcess()
+	{
+		while(!(haltFlag & flags))
+		{
+			runOneCommand();
+		}
+	}
+
+	private void runOneCommand()
 	{
 		debug
 		{
@@ -550,7 +558,7 @@ void handler(ubyte opcode)(ref ProcessorCore pc)
 void handler(ubyte opcode)(ref ProcessorCore pc)
 	if(opcode == OperationCode.HLT)
 {
-	// TODO halt handler
+	pc.flags |= haltFlag;
 }
 
 void jumpImplementation(ref ProcessorCore pc)

@@ -292,8 +292,9 @@ public:
 	void write(uint startAddr, immutable(ubyte)[] data)
 	in
 	{
-		assert(typeOfStorage != TypeOfStorage.RAM, "this type of memory doesn't support range write");
 		assert(startAddr + data.length <= storage.length, "impossible range for write");
+		assert(startAddr % uint.sizeof == 0, "start address  is misalligned");
+		assert(data.length % uint.sizeof == 0, "end address  is misalligned");
 	}
 	body
 	{
