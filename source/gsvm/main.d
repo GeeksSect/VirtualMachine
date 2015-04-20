@@ -1,15 +1,8 @@
 ﻿module main;
 
 import std.stdio;
-import std.conv;
-import spec.common;
-import std.json;
-import std.stdio;
-import std.range;
-import std.traits;
 import std.algorithm;
 import std.array;
-import std.typecons;
 
 import gsvm.vm;
 import gsvm.models.storage;
@@ -19,7 +12,7 @@ void main(string[] args)
 	try
 	{
 		File programFile = File(args[1],"r");
-		auto memory = Storage(0xF000, TypeOfStorage.RAM);
+		auto memory = Storage(0xF000, TypeOfStorage.Programm);
 
 		programFile.writeBytesIn(memory);
 //		auto memory = Storage(0xF000, TypeOfStorage.RAM);
@@ -50,11 +43,6 @@ void main(string[] args)
 
 void writeBytesIn(File sourceFile, Storage memory)
 {
-	auto byteFlow = sourceFile.byChunk(4096).joiner.array;
-
-	uint curPos = 0x00;
-	foreach(bt; byteFlow) {
-		memory.write(curPos, bt);
-		curPos += 1;
-	}
+	auto byteFlow = cast(immutable(ubyte)[])sourceFile.byChunk(4096).joiner.array;
+	memory.write(0, byteFlow);
 }
