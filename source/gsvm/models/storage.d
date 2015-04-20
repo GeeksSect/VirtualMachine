@@ -447,7 +447,7 @@ debug
 		writeln("dump: ");
 		foreach(i; from..to)
 		{
-			if(i %4 == 0)
+			if(i % 4 == 0)
 				writef("%04X:   ", i);
 			writef("%02X ", memory.storage[i]);
 			if(i % 4 == 3)
