@@ -34,6 +34,9 @@ private:
 
 	long localInstruction = half;
 	uint globalInstruction;
+	uint comand;
+	ubyte countOfParams;
+	long paramOrigin;
 
 	Storage* memory;
 
@@ -59,43 +62,16 @@ public:
 			writeln("localInstruction: ", localInstruction);
 			writeln("globalInstruction: ", globalInstruction);
 		}
-		uint comand = localProgrammRegister.read!uint(cast(uint)localInstruction);
+		comand = localProgrammRegister.read!uint(cast(uint)localInstruction);
 		debug writeln("command and operand");
-		auto countOfParams = paramsCount(comand);
-		auto paramOrigin = localInstruction + 4;
-		foreach(param; 0..countOfParams)
-		{
-			//TODO load according byte count
-			if(comand.haveToRead(param))
-			{
-				auto value = localProgrammRegister.read!uint(cast(uint)(paramOrigin + 4 * param));
-				if(!comand.isDirect(param))
-				{
-					value = generalPourposeRegisters.read!uint(value);
-					if(comand.isIndirect(param))
-						value = generalPourposeRegisters.read!uint(value);
-				}
-				calcRegisters[param] = value;
-			}
-		}
-		auto comandDiff = uint.sizeof * (1 + countOfParams);
-		localInstruction += comandDiff;
-		globalInstruction += comandDiff;
+		countOfParams = paramsCount(comand);
+		paramOrigin = localInstruction + 4;
+		loadParams();
 		debug writeln("before:\n", comand, calcRegisters);
-		handlerVector[cast(ubyte)(comand & 0xFF)](this);
+		goToNextInstruction();
+		handlerVector[comand.opcode](this);
 		debug writeln("after:\n", comand, calcRegisters);
-		foreach(param; 0..countOfParams)
-		{
-			if(comand.haveToWrite(param))
-			{
-				auto address = localProgrammRegister.read!uint(cast(uint)(paramOrigin + 4 * param));
-				if(comand.isDirect(param))
-					throw new Exception("Try to write in direct address");
-				if(comand.isIndirect(param))
-					address = generalPourposeRegisters.read!uint(address);
-				generalPourposeRegisters.write(address, cast(uint)calcRegisters[param]);
-			}
-		}
+		storeParams();
 		debug generalPourposeRegisters.dump(0,8);
 	}
 
@@ -107,7 +83,8 @@ public:
 		localProgrammRegister.write(0, memory.read(startCopy, registerSize));
 	}
 
-	private void subLoadProgramm()
+private:
+	void subLoadProgramm()
 	{
 		if(localInstruction < quarter)
 		{
@@ -144,9 +121,111 @@ public:
 			}
 		}
 	}
+
+	void goToNextInstruction()
+	{
+		auto comandDiff = uint.sizeof * (1 + countOfParams);
+		localInstruction += comandDiff;
+		globalInstruction += comandDiff;
+	}
+
+	void loadParams()
+	{
+		foreach(param; 0..countOfParams)
+		{
+			if(comand.haveToRead(param))
+			{
+				ulong value;
+				uint address = cast(uint)(paramOrigin + 4 * param);
+				switch(comand.deepness(param))
+				{
+					case 0:
+						value = localProgrammRegister.readNecessaryCountOfByte(address, comand.byteCount);
+						break;
+					case 1:
+						address = cast(uint)localProgrammRegister.readNecessaryCountOfByte(address, 4);
+						value = generalPourposeRegisters.readNecessaryCountOfByte(address, comand.byteCount);
+						break;
+					case 2:
+						address = cast(uint)localProgrammRegister.readNecessaryCountOfByte(address, 4);
+						address = cast(uint)generalPourposeRegisters.readNecessaryCountOfByte(address, 4);
+						value = generalPourposeRegisters.readNecessaryCountOfByte(address, comand.byteCount);
+						break;
+					default:
+						assert(0);
+				}
+				calcRegisters[param] = value;
+			}
+		}
+	}
+
+	void storeParams()
+	{
+		foreach(param; 0..countOfParams)
+		{
+			if(comand.haveToWrite(param))
+			{
+				uint address = cast(uint)(paramOrigin + 4 * param);
+				switch(comand.deepness(param))
+				{
+					case 0:
+						throw new Exception("Try to write in direct address");
+					case 1:
+						address = cast(uint)localProgrammRegister.readNecessaryCountOfByte(address, 4);
+						generalPourposeRegisters.writeNecessaryCountOfByte(address, comand.byteCount, calcRegisters[param]);
+						break;
+					case 2:
+						address = cast(uint)localProgrammRegister.readNecessaryCountOfByte(address, 4);
+						address = cast(uint)generalPourposeRegisters.readNecessaryCountOfByte(address, 4);
+						generalPourposeRegisters.writeNecessaryCountOfByte(address, comand.byteCount, calcRegisters[param]);
+						break;
+					default:
+						assert(0);
+				}
+			}
+		}
+	}
 }
 
 private:
+
+ulong readNecessaryCountOfByte(ref Storage storage, uint address, uint byteCount)
+{
+	typeof(return) result;
+	switch(byteCount)
+	{
+		case 1:
+			result = storage.read!ubyte(address);
+			break;
+		case 2:
+			result = storage.read!ushort(address);
+			break;
+		case 4:
+			result = storage.read!uint(address);
+			break;
+		default:
+			assert(0);
+	}
+	return result;
+}
+
+void writeNecessaryCountOfByte(ref Storage storage, uint address, uint byteCount, ulong value)
+{
+	switch(byteCount)
+	{
+		case 1:
+			storage.write(address, cast(ubyte)value);
+			break;
+		case 2:
+			storage.write(address, cast(ushort)value);
+			break;
+		case 4:
+			storage.write(address, cast(uint)value);
+			break;
+		default:
+			assert(0);
+	}
+}
 
 unittest
 {
@@ -162,6 +241,22 @@ unittest
 uint byteCount(uint comand)
 {
 	return (comand & byteCountMask) >> byteCountShift;
+}
+
+unittest
+{
+	assert(0x00 == opcode(0x0000_0000));
+	assert(0x10 == opcode(0x4100_1110));
+	assert(0x10 == opcode(0x4101_1110));
+	assert(0x29 == opcode(0x4F28_C329));
+	assert(0x24 == opcode(0x1700_4324));
+	assert(0x25 == opcode(0x2701_4325));
+	assert(0x30 == opcode(0x4300_0330));
+}
+
+ubyte opcode(uint comand)
+{
+	return cast(ubyte)(comand & opcodeMask);
 }
 
 unittest
@@ -199,6 +294,11 @@ ubyte onesCount(T, size_t bitCount = T.sizeof * 8)(T number)
 		zond <<= 1;
 	}
 	return result;
+}
+
+uint deepness(uint comand, uint param)
+{
+	return comand.isDirect(param)? 0: (comand.isIndirect(param)? 2: 1);
 }
 
 alias haveToRead = isSpecifiedBitFlagged!(readFlagsMask, readFlagsShift);
