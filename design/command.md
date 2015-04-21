@@ -81,9 +81,11 @@ def sw: PartialFunction[Command, Unit] = {
   }
 ```
 
+## Votes:
+
 \+ [alexFrankfurt](https://github.com/alexFrankfurt), [krucios](https://github.com/krucios) 
 
-\- [somebody](), 
+\- [Harald Zealot](https://github.com/HaraldZealot), 
 
 
 
