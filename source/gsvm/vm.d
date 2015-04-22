@@ -478,6 +478,7 @@ void handler(ubyte opcode)(ref ProcessorCore pc)
 	if(pc.calcRegisters[2] != 0)
 		pc.flags ^= equalFlag;
 
+	//TODO fix logic
 	pc.flags |= greatFlag;
 	if(pc.calcRegisters[2] <= 0)
 		pc.flags ^= greatFlag;
@@ -485,6 +486,14 @@ void handler(ubyte opcode)(ref ProcessorCore pc)
 	pc.flags |= lessFlag;
 	if(pc.calcRegisters[2] >= 0)
 		pc.flags ^= lessFlag;
+
+	pc.flags |= highFlag;
+	if(pc.calcRegisters[0] <= pc.calcRegisters[1])
+		pc.flags ^= highFlag;
+
+	pc.flags |= lowFlag;
+	if(pc.calcRegisters[0] <= pc.calcRegisters[1])
+		pc.flags ^= lowFlag;
 }
 
 void handler(ubyte opcode)(ref ProcessorCore pc)
@@ -540,19 +549,23 @@ void handler(ubyte opcode)(ref ProcessorCore pc)
 void handler(ubyte opcode)(ref ProcessorCore pc)
 	if(opcode == OperationCode.INT)
 {
-	//TODO iterruption handler
+	if(pc.flags & allowInterruptionFlag)
+	{
+		//TODO self interruption
+	}
 }
 
 void handler(ubyte opcode)(ref ProcessorCore pc)
 	if(opcode == OperationCode.SLI)
 {
-	//TODO enable interruption handler
+	pc.flags |= allowInterruptionFlag;
 }
 
 void handler(ubyte opcode)(ref ProcessorCore pc)
 	if(opcode == OperationCode.CLI)
 {
-	//TODO disable interruption handler
+	pc.flags |= allowInterruptionFlag;
+	pc.flags ^= allowInterruptionFlag;
 }
 
 void handler(ubyte opcode)(ref ProcessorCore pc)
