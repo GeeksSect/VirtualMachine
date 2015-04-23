@@ -516,14 +516,14 @@ void handler(ubyte opcode)(ref ProcessorCore pc)
 void handler(ubyte opcode)(ref ProcessorCore pc)
 	if(opcode == OperationCode.JE)
 {
-	if (pc.flags & 1u)
+	if (pc.flags & equalFlag)
 		pc.jumpImplementation();
 }
 
 void handler(ubyte opcode)(ref ProcessorCore pc)
 	if(opcode == OperationCode.JNE)
 {
-	if (!(pc.flags & 1u))
+	if (!(pc.flags & equalFlag))
 		pc.jumpImplementation();
 }
 
@@ -575,8 +575,8 @@ void handler(ubyte opcode)(ref ProcessorCore pc)
 void handler(ubyte opcode)(ref ProcessorCore pc)
 	if(opcode == OperationCode.CLI)
 {
-	pc.flags |= allowInterruptionFlag;
-	pc.flags ^= allowInterruptionFlag;
+	enum allowInterruptionAntiFlag = ~allowInterruptionFlag;
+	pc.flags &= allowInterruptionAntiFlag;
 }
 
 void handler(ubyte opcode)(ref ProcessorCore pc)
