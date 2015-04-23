@@ -474,26 +474,37 @@ void handler(ubyte opcode)(ref ProcessorCore pc)
 	if(opcode == OperationCode.CMP)
 {
 	pc.calcRegisters[2] = pc.calcRegisters[0] - pc.calcRegisters[1];
-	pc.flags |= equalFlag;
-	if(pc.calcRegisters[2] != 0)
-		pc.flags ^= equalFlag;
+
+	enum equalAntiFlag = ~ equalFlag;
+	if(pc.calcRegisters[2] == 0)
+		pc.flags |= equalFlag;
+	else
+		pc.flags &= equalAntiFlag;
 
 	//TODO fix logic
-	pc.flags |= greatFlag;
-	if(pc.calcRegisters[2] <= 0)
-		pc.flags ^= greatFlag;
+	enum greatAntiFlag = ~greatFlag;
+	if(pc.calcRegisters[2] > 0)
+		pc.flags |= greatFlag;
+	else
+		pc.flags &= greatAntiFlag;
 
-	pc.flags |= lessFlag;
-	if(pc.calcRegisters[2] >= 0)
-		pc.flags ^= lessFlag;
+	enum lessAntiFlag = ~lessFlag;
+	if(pc.calcRegisters[2] < 0)
+		pc.flags |= lessFlag;
+	else
+		pc.flags &= lessAntiFlag;
 
-	pc.flags |= highFlag;
-	if(pc.calcRegisters[0] <= pc.calcRegisters[1])
-		pc.flags ^= highFlag;
+	enum highAntiFlag = ~highFlag;
+	if(pc.calcRegisters[0] > pc.calcRegisters[1])
+		pc.flags |= highFlag;
+	else
+		pc.flags &= highAntiFlag;
 
-	pc.flags |= lowFlag;
-	if(pc.calcRegisters[0] <= pc.calcRegisters[1])
-		pc.flags ^= lowFlag;
+	enum lowAntiFlag = ~lowFlag;
+	if(pc.calcRegisters[0] < pc.calcRegisters[1])
+		pc.flags |= lowFlag;
+	else
+		pc.flags &= lowAntiFlag;
 }
 
 void handler(ubyte opcode)(ref ProcessorCore pc)
