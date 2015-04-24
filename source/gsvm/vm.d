@@ -339,10 +339,32 @@ void handler(ubyte opcode)(ref ProcessorCore pc)
 {
 }
 
+unittest
+{
+	try
+	{
+		auto mem = Storage(0x40, TypeOfStorage.RAM);
+		auto pc = ProcessorCore(&mem);
+		pc.handler!(OperationCode.INVALID);
+	}catch(Exception e)
+	{
+		assert(e.msg == "impossible opcode");
+	}
+}
+
 void handler(ubyte opcode)(ref ProcessorCore pc)
 	if(opcode == OperationCode.INVALID)
 {
 	throw new Exception("impossible opcode");
+}
+
+unittest
+{
+	auto mem = Storage(0x40, TypeOfStorage.RAM);
+	auto pc = ProcessorCore(&mem);
+	pc.calcRegisters[0] = 0x1234_5678_9ABC_DEF0uL;
+	pc.handler!(OperationCode.NOT);
+	assert(pc.calcRegisters[1] == 0xEDCB_A987_6543_210FuL);
 }
 
 void handler(ubyte opcode)(ref ProcessorCore pc)
