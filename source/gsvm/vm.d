@@ -80,6 +80,7 @@ public:
 		handlerVector[comand.opcode](this);
 		debug writeln("after:\n", comand, calcRegisters);
 		storeParams();
+		subLoadProgramm();
 		debug generalPourposeRegisters.dump(0,8);
 	}
 
