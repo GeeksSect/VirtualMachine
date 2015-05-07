@@ -436,7 +436,7 @@ void handler(ubyte opcode)(ref ProcessorCore pc)
 void handler(ubyte opcode)(ref ProcessorCore pc)
 	if(opcode == OperationCode.INC)
 {
-	//TODO increment handler
+	pc.calcRegisters[1] = pc.calcRegisters[0] + 1;
 }
 
 void handler(ubyte opcode)(ref ProcessorCore pc)
