@@ -553,7 +553,8 @@ void handler(ubyte opcode)(ref ProcessorCore pc)
 void handler(ubyte opcode)(ref ProcessorCore pc)
 	if(opcode == OperationCode.JGR)
 {
-	//TODO jumpIfGreat handler
+	if (pc.flags & greatFlag)
+		pc.jumpImplementation();
 }
 
 void handler(ubyte opcode)(ref ProcessorCore pc)
