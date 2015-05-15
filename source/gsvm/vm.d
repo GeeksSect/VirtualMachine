@@ -560,7 +560,8 @@ void handler(ubyte opcode)(ref ProcessorCore pc)
 void handler(ubyte opcode)(ref ProcessorCore pc)
 	if(opcode == OperationCode.JLS)
 {
-	//TODO jumpIfLess handler
+	if (pc.flags & lessFlag)
+		pc.jumpImplementation();
 }
 
 void handler(ubyte opcode)(ref ProcessorCore pc)
