@@ -574,7 +574,8 @@ void handler(ubyte opcode)(ref ProcessorCore pc)
 void handler(ubyte opcode)(ref ProcessorCore pc)
 	if(opcode == OperationCode.JLW)
 {
-	//TODO jumpIfLow handler
+	if (pc.flags & lowFlag)
+		pc.jumpImplementation();
 }
 
 void handler(ubyte opcode)(ref ProcessorCore pc)
