@@ -478,7 +478,8 @@ void handler(ubyte opcode)(ref ProcessorCore pc)
 void handler(ubyte opcode)(ref ProcessorCore pc)
 	if(opcode == OperationCode.UDIV)
 {
-	//TODO unsigned division handler
+	pc.calcRegisters[2] = pc.calcRegisters[0] / pc.calcRegisters[1];
+	pc.calcRegisters[3] = pc.calcRegisters[0] % pc.calcRegisters[1];
 }
 
 void handler(ubyte opcode)(ref ProcessorCore pc)
